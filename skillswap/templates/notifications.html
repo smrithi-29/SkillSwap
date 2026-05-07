@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Notifications - SkillSwap{% endblock %}
+{% block nav_notifications %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-4">Notifications</h3>
+
+  {% if notifications %}
+    {% for notif in notifications %}
+    <div class="alert alert-{% if notif.notification_type == 'swap_accepted' %}success{% elif notif.notification_type == 'swap_rejected' %}danger{% elif notif.notification_type == 'new_message' %}info{% elif notif.notification_type == 'new_review' %}warning{% else %}secondary{% endif %} d-flex justify-content-between align-items-center">
+      <span>{{ notif.message }}</span>
+      <small class="text-muted ms-3 text-nowrap">{{ notif.created_at|date:"M d, H:i" }}</small>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="text-center py-5">
+    <h5 class="text-muted">No notifications yet.</h5>
+    <p class="text-muted">When someone requests a swap or sends you a message, it'll show up here.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

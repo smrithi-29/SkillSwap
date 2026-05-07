@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Post Skill - SkillSwap{% endblock %}
+{% block nav_post_skill %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow border-0 p-4">
+        <h3 class="text-center mb-3">Post Your Skill</h3>
+        <form method="post">
+          {% csrf_token %}
+          <label class="form-label">Skill Name</label>
+          {{ form.name }}
+          <label class="form-label">Description</label>
+          {{ form.description }}
+          <label class="form-label">Skill You Want in Return</label>
+          {{ form.skill_wanted }}
+          <button type="submit" class="btn btn-primary w-100 mt-2">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

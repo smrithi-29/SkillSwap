@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Sign Up - SkillSwap</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4f46e5 70%, #06b6d4 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .signup-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .signup-card {
+      background: rgba(255,255,255,0.97);
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 460px;
+    }
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 60px; height: 60px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+    }
+
+    .logo-area h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1e1b4b;
+      margin: 0;
+    }
+
+    .logo-area p {
+      color: #6b7280;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .name-row { display: flex; gap: 12px; }
+    .name-row .form-control { flex: 1; }
+
+    .form-control {
+      border-radius: 10px;
+      border: 1.5px solid #e5e7eb;
+      padding: 10px 14px;
+      font-size: 0.93rem;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+
+    .form-control:focus {
+      border-color: #4f46e5;
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+      outline: none;
+    }
+
+    .password-rules {
+      background: #f8faff;
+      border: 1.5px solid #e0e7ff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .password-rules .rules-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4f46e5;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .rule-item {
+      font-size: 0.85rem;
+      color: #6b7280;
+      padding: 2px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+
+    .rule-item.pass { color: #059669; }
+    .rule-item.fail { color: #dc2626; }
+
+    .rule-icon { font-size: 0.75rem; }
+
+    .btn-signup {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      padding: 12px;
+      width: 100%;
+      font-size: 0.95rem;
+      margin-top: 4px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-signup:hover {
+      background: linear-gradient(135deg, #4338ca, #6d28d9);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(79,70,229,0.35);
+      color: white;
+    }
+
+    .login-link {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    .login-link a {
+      color: #4f46e5;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .login-link a:hover { text-decoration: underline; }
+
+    .alert {
+      border-radius: 10px;
+      border: none;
+      font-size: 0.88rem;
+      padding: 8px 14px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="signup-wrapper">
+  <div class="signup-card">
+
+    <div class="logo-area">
+      <div class="logo-icon">⚡</div>
+      <h1>SkillSwap</h1>
+      <p>Create your account and start swapping skills</p>
+    </div>
+
+    <form method="post" id="signupForm">
+      {% csrf_token %}
+
+      <div class="name-row">
+        {{ form.first_name }}
+        {{ form.last_name }}
+      </div>
+
+      {{ form.username }}
+      {{ form.email }}
+      {{ form.password1 }}
+
+      <div class="password-rules">
+        <div class="rules-title"><i class="bi bi-shield-check me-1"></i>Password requirements</div>
+        <div class="rule-item fail" id="rule-len">
+          <span class="rule-icon">✗</span> At least 8 characters
+        </div>
+        <div class="rule-item fail" id="rule-upper">
+          <span class="rule-icon">✗</span> At least one uppercase letter (A–Z)
+        </div>
+        <div class="rule-item fail" id="rule-num">
+          <span class="rule-icon">✗</span> At least one number (0–9)
+        </div>
+        <div class="rule-item fail" id="rule-special">
+          <span class="rule-icon">✗</span> At least one special character (@, #, ! etc.)
+        </div>
+      </div>
+
+      {{ form.password2 }}
+
+      {% for field in form %}
+        {% for error in field.errors %}
+          <div class="alert alert-danger">⚠️ {{ error }}</div>
+        {% endfor %}
+      {% endfor %}
+
+      <button type="submit" class="btn-signup">
+        <i class="bi bi-person-plus me-2"></i>Create Account
+      </button>
+    </form>
+
+    <div class="login-link">
+      Already have an account? <a href="{% url 'login' %}">Sign in</a>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const pwdField = document.querySelector('input[name="password1"]');
+
+  function checkRule(id, condition) {
+    const el = document.getElementById(id);
+    const icon = el.querySelector('.rule-icon');
+    if (condition) {
+      el.classList.add('pass');
+      el.classList.remove('fail');
+      icon.textContent = '✓';
+    } else {
+      el.classList.add('fail');
+      el.classList.remove('pass');
+      icon.textContent = '✗';
+    }
+  }
+
+  pwdField.addEventListener('input', function () {
+    const val = this.value;
+    checkRule('rule-len', val.length >= 8);
+    checkRule('rule-upper', /[A-Z]/.test(val));
+    checkRule('rule-num', /[0-9]/.test(val));
+    checkRule('rule-special', /[!@#$%^&*(),.?":{}|<>_\-]/.test(val));
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% extends 'base_admin.html' %}
+{% block title %}Admin Dashboard - SkillSwap{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block side_dashboard %}fw-bold text-warning{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-3 mb-3">
+    <div class="card text-center shadow border-0 p-3">
+      <h5 class="text-muted">Total Users</h5>
+      <h2 class="text-primary">{{ total_users }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center shadow border-0 p-3">
+      <h5 class="text-muted">Skills Posted</h5>
+      <h2 class="text-success">{{ total_skills }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center shadow border-0 p-3">
+      <h5 class="text-muted">Active Swaps</h5>
+      <h2 class="text-warning">{{ active_swaps }}</h2>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-center shadow border-0 p-3">
+      <h5 class="text-muted">Pending Requests</h5>
+      <h2 class="text-danger">{{ pending_requests }}</h2>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-md-4">
+    <a href="{% url 'admin_users' %}" class="btn btn-outline-primary w-100 mb-2">Manage Users</a>
+  </div>
+  <div class="col-md-4">
+    <a href="{% url 'admin_skills' %}" class="btn btn-outline-success w-100 mb-2">Manage Skills</a>
+  </div>
+  <div class="col-md-4">
+    <a href="{% url 'admin_requests' %}" class="btn btn-outline-warning w-100 mb-2">Manage Requests</a>
+  </div>
+</div>
+{% endblock %}

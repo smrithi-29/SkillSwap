@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {{ other_user.username }} - SkillSwap{% endblock %}
+{% block nav_chat %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="card border-0" style="border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
+
+        <!-- CHAT HEADER -->
+        <div style="background:linear-gradient(135deg,#1e1b4b,#4f46e5);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+          <div class="d-flex align-items-center gap-3">
+            <a href="{% url 'chat_list' %}" style="color:white;text-decoration:none;font-size:1.2rem;">
+              <i class="bi bi-arrow-left"></i>
+            </a>
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#a5b4fc,#67e8f9);display:flex;align-items:center;justify-content:center;font-weight:700;color:#1e1b4b;font-size:1rem;">
+              {{ other_user.username|first|upper }}
+            </div>
+            <div>
+              <div style="color:white;font-weight:700;font-size:1rem;">{{ other_user.get_full_name|default:other_user.username }}</div>
+              <div style="color:rgba(255,255,255,0.6);font-size:0.78rem;">@{{ other_user.username }}</div>
+            </div>
+          </div>
+          <!-- THEME PICKER -->
+          <div class="d-flex align-items-center gap-2">
+            <span style="color:rgba(255,255,255,0.7);font-size:0.78rem;">Theme:</span>
+            <div class="d-flex gap-1">
+              <div onclick="setTheme('default')" title="Default" style="width:20px;height:20px;border-radius:50%;background:#f1f5f9;border:2px solid white;cursor:pointer;"></div>
+              <div onclick="setTheme('dark')" title="Dark" style="width:20px;height:20px;border-radius:50%;background:#1f2937;border:2px solid white;cursor:pointer;"></div>
+              <div onclick="setTheme('purple')" title="Purple" style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:2px solid white;cursor:pointer;"></div>
+              <div onclick="setTheme('green')" title="Green" style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981);border:2px solid white;cursor:pointer;"></div>
+              <div onclick="setTheme('ocean')" title="Ocean" style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#06b6d4);border:2px solid white;cursor:pointer;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAT MESSAGES AREA -->
+        <div id="chatBox" style="height:420px;overflow-y:auto;padding:20px;transition:background 0.3s ease;">
+          {% if chat_messages %}
+            {% for msg in chat_messages %}
+
+            {% if msg.sender == request.user %}
+            <!-- SENT MESSAGE -->
+            <div class="d-flex justify-content-end mb-3">
+              <div style="max-width:65%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border-radius:18px 4px 18px 18px;padding:10px 14px;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;">
+                {% if msg.image %}
+                <img src="{{ msg.image.url }}" style="max-width:100%;border-radius:10px;margin-bottom:6px;display:block;" alt="Sent image">
+                {% endif %}
+                {% if msg.message %}
+                <div style="line-height:1.5;">{{ msg.message }}</div>
+                {% endif %}
+                <div style="font-size:0.7rem;opacity:0.75;text-align:right;margin-top:4px;">{{ msg.timestamp|time:"H:i" }}</div>
+              </div>
+            </div>
+
+            {% else %}
+            <!-- RECEIVED MESSAGE -->
+            <div class="d-flex justify-content-start mb-3">
+              <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#a5b4fc,#67e8f9);display:flex;align-items:center;justify-content:center;font-weight:700;color:#1e1b4b;font-size:0.8rem;margin-right:8px;flex-shrink:0;align-self:flex-end;">
+                {{ msg.sender.username|first|upper }}
+              </div>
+              <div style="max-width:65%;background:white;border:1.5px solid #e0e7ff;color:#1f2937;border-radius:4px 18px 18px 18px;padding:10px 14px;word-wrap:break-word;word-break:break-word;overflow-wrap:break-word;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+                {% if msg.image %}
+                <img src="{{ msg.image.url }}" style="max-width:100%;border-radius:10px;margin-bottom:6px;display:block;" alt="Image">
+                {% endif %}
+                {% if msg.message %}
+                <div style="line-height:1.5;">{{ msg.message }}</div>
+                {% endif %}
+                <div style="font-size:0.7rem;color:#9ca3af;text-align:right;margin-top:4px;">{{ msg.timestamp|time:"H:i" }}</div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% endfor %}
+          {% else %}
+          <div class="text-center" style="margin-top:120px;">
+            <div style="font-size:3rem;margin-bottom:12px;">👋</div>
+            <p style="color:#9ca3af;font-weight:500;">No messages yet. Say hello!</p>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- MESSAGE INPUT -->
+        <div style="background:white;border-top:1.5px solid #e0e7ff;padding:12px 16px;">
+          <form method="post" enctype="multipart/form-data" id="chatForm">
+            {% csrf_token %}
+            <div class="d-flex align-items-center gap-2">
+
+              <!-- IMAGE UPLOAD BUTTON -->
+              <label for="imageInput" style="cursor:pointer;width:40px;height:40px;border-radius:50%;background:#f1f5f9;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s;" title="Send image">
+                <i class="bi bi-image" style="color:#4f46e5;font-size:1.1rem;"></i>
+              </label>
+              <input type="file" id="imageInput" name="image" accept="image/*" style="display:none;" onchange="previewImage(this)">
+
+              <!-- TEXT INPUT -->
+              <div class="flex-grow-1 position-relative">
+                {{ form.message }}
+                <!-- IMAGE PREVIEW -->
+                <div id="imagePreview" style="display:none;position:absolute;bottom:50px;left:0;background:white;border:1.5px solid #e0e7ff;border-radius:12px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                  <img id="previewImg" style="max-height:80px;border-radius:8px;" alt="Preview">
+                  <button type="button" onclick="clearImage()" style="position:absolute;top:4px;right:4px;background:#ef4444;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:0.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+                </div>
+              </div>
+
+              <!-- SEND BUTTON -->
+              <button type="submit" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3);">
+                <i class="bi bi-send-fill" style="font-size:1rem;"></i>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Auto scroll to bottom
+  const chatBox = document.getElementById('chatBox');
+  chatBox.scrollTop = chatBox.scrollHeight;
+
+  // THEMES
+  const themes = {
+    default: { bg: '#f1f5f9', pattern: 'none' },
+    dark:    { bg: '#111827', pattern: 'none' },
+    purple:  { bg: 'linear-gradient(135deg, #1e1b4b, #312e81)', pattern: 'none' },
+    green:   { bg: 'linear-gradient(135deg, #064e3b, #065f46)', pattern: 'none' },
+    ocean:   { bg: 'linear-gradient(135deg, #0c4a6e, #0e7490)', pattern: 'none' },
+  };
+
+  function setTheme(name) {
+    const theme = themes[name];
+    chatBox.style.background = theme.bg;
+    localStorage.setItem('chatTheme', name);
+  }
+
+  // Load saved theme
+  const savedTheme = localStorage.getItem('chatTheme');
+  if (savedTheme && themes[savedTheme]) setTheme(savedTheme);
+
+  // IMAGE PREVIEW
+  function previewImage(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function clearImage() {
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('previewImg').src = '';
+  }
+
+  // Allow sending with Enter key
+  document.querySelector('input[name="message"]').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      document.getElementById('chatForm').submit();
+    }
+  });
+</script>
+{% endblock %}

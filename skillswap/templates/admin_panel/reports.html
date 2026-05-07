@@ -1,0 +1,40 @@
+{% extends 'base_admin.html' %}
+{% block title %}Reports - SkillSwap{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block side_reports %}fw-bold text-warning{% endblock %}
+
+{% block content %}
+<h4 class="mb-3">Reports &amp; Overview</h4>
+
+<div class="card shadow border-0 mb-4">
+  <div class="card-header bg-dark text-white">Inactive / Flagged Skills</div>
+  <div class="card-body">
+    {% if flagged_skills %}
+      {% for skill in flagged_skills %}
+      <div class="alert alert-warning mb-2 py-2">
+        <strong>{{ skill.name }}</strong> by {{ skill.user.username }} &mdash; marked inactive
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="text-muted mb-0">No flagged skills at the moment.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow border-0">
+  <div class="card-header bg-dark text-white">Recent Swap Activity</div>
+  <div class="card-body">
+    {% if recent_swaps %}
+      {% for swap in recent_swaps %}
+      <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+        <span>{{ swap.from_user.username }} &rarr; {{ swap.to_user.username }}</span>
+        <span class="badge bg-{% if swap.status == 'accepted' %}success{% elif swap.status == 'rejected' %}danger{% else %}secondary{% endif %}">{{ swap.status|capfirst }}</span>
+        <small class="text-muted">{{ swap.created_at|date:"M d" }}</small>
+      </div>
+      {% endfor %}
+    {% else %}
+    <p class="text-muted mb-0">No swap activity found.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base_admin.html' %}
+{% block title %}Swap Requests - SkillSwap{% endblock %}
+{% block page_title %}Swap Requests{% endblock %}
+{% block side_requests %}fw-bold text-warning{% endblock %}
+
+{% block content %}
+<h4 class="mb-3">All Swap Requests</h4>
+{% for swap in swap_requests %}
+<div class="card border-0 shadow-sm mb-3 p-3">
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <p class="mb-1"><strong>From:</strong> {{ swap.from_user.username }} &rarr; <strong>To:</strong> {{ swap.to_user.username }}</p>
+      <p class="mb-1">
+        <span class="badge bg-info text-dark">Offers: {{ swap.skill_offered.name }}</span>
+        <span class="badge bg-warning text-dark ms-1">Wants: {{ swap.skill_wanted_text }}</span>
+        <span class="badge bg-{% if swap.status == 'accepted' %}success{% elif swap.status == 'rejected' %}danger{% else %}secondary{% endif %} ms-1">{{ swap.status|capfirst }}</span>
+      </p>
+      <small class="text-muted">{{ swap.created_at|date:"M d, Y H:i" }}</small>
+    </div>
+    <div class="col-md-4 text-end">
+      {% if swap.status == 'pending' %}
+      <a href="{% url 'admin_approve_request' swap.id %}" class="btn btn-success btn-sm">Approve</a>
+      <a href="{% url 'admin_reject_request' swap.id %}" class="btn btn-danger btn-sm ms-1">Reject</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<p class="text-muted">No swap requests found.</p>
+{% endfor %}
+{% endblock %}

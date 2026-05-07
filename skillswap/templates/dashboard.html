@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - SkillSwap{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-4">Welcome Back, {{ request.user.first_name|default:request.user.username }}!</h3>
+
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3">
+      <div class="card shadow text-center p-3 border-0">
+        <h5 class="text-muted">My Skills</h5>
+        <h2 class="text-primary">{{ my_skills.count }}</h2>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow text-center p-3 border-0">
+        <h5 class="text-muted">Pending Requests</h5>
+        <h2 class="text-warning">{{ pending_requests }}</h2>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card shadow text-center p-3 border-0">
+        <h5 class="text-muted">Notifications</h5>
+        <h2 class="text-danger">{{ unread_notifications }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">My Skills</div>
+        <div class="card-body">
+          {% if my_skills %}
+            {% for skill in my_skills %}
+            <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+              <div>
+                <strong>{{ skill.name }}</strong>
+                {% if skill.skill_wanted %}<br><small class="text-muted">Wants: {{ skill.skill_wanted }}</small>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted mb-2">No skills posted yet.</p>
+          {% endif %}
+          <a href="{% url 'post_skill' %}" class="btn btn-success btn-sm mt-2">+ Post a Skill</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Recent Swap Activity</div>
+        <div class="card-body">
+          {% if recent_activity %}
+            {% for swap in recent_activity %}
+            <div class="mb-2 p-2 bg-light rounded">
+              <small>
+                {% if swap.from_user == request.user %}
+                  You requested swap with <strong>{{ swap.to_user.username }}</strong>
+                {% else %}
+                  <strong>{{ swap.from_user.username }}</strong> requested a swap with you
+                {% endif %}
+                &mdash;
+                <span class="badge bg-{% if swap.status == 'accepted' %}success{% elif swap.status == 'rejected' %}danger{% else %}warning text-dark{% endif %}">{{ swap.status }}</span>
+              </small>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted">No recent activity.</p>
+          {% endif %}
+          <a href="{% url 'swap_requests' %}" class="btn btn-outline-primary btn-sm mt-2">View All Requests</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-2">
+    <a href="{% url 'marketplace' %}" class="btn btn-primary me-2">Browse Marketplace</a>
+    <a href="{% url 'matches' %}" class="btn btn-outline-success">View My Matches</a>
+  </div>
+</div>
+{% endblock %}

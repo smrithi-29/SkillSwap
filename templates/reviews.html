@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Reviews - SkillSwap{% endblock %}
+{% block nav_reviews %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-4">Reviews</h3>
+
+  {% if reviewable_users %}
+  <div class="card shadow border-0 mb-4">
+    <div class="card-header bg-dark text-white">Leave a Review</div>
+    <div class="card-body">
+      <p class="text-muted">You can review users you've completed swaps with:</p>
+      {% for user in reviewable_users %}
+      <div class="d-flex align-items-center justify-content-between mb-2 p-2 bg-light rounded">
+        <span><strong>{{ user.get_full_name|default:user.username }}</strong></span>
+        <a href="{% url 'submit_review' user.id %}" class="btn btn-warning btn-sm">Rate &amp; Review</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Reviews I Received</div>
+        <div class="card-body">
+          {% if received_reviews %}
+            {% for review in received_reviews %}
+            <div class="mb-3 p-2 border rounded">
+              <strong>{{ review.reviewer.username }}</strong>
+              <span class="text-warning ms-2">{{ review.rating }}&#9733;</span>
+              <p class="mb-0 small mt-1">{{ review.comment }}</p>
+              <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted">No reviews received yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Reviews I Gave</div>
+        <div class="card-body">
+          {% if given_reviews %}
+            {% for review in given_reviews %}
+            <div class="mb-3 p-2 border rounded">
+              <strong>For: {{ review.reviewed_user.username }}</strong>
+              <span class="text-warning ms-2">{{ review.rating }}&#9733;</span>
+              <p class="mb-0 small mt-1">{{ review.comment }}</p>
+              <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted">You haven't given any reviews yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

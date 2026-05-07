@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Chat - SkillSwap{% endblock %}
+{% block nav_chat %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h3 class="mb-3">Messages</h3>
+      {% if chat_users %}
+        {% for user in chat_users %}
+        <a href="{% url 'chat' user.id %}" class="text-decoration-none">
+          <div class="card shadow-sm border-0 mb-2 p-3 d-flex flex-row align-items-center">
+            <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center me-3" style="width:45px;height:45px;min-width:45px;">
+              {{ user.username|first|upper }}
+            </div>
+            <div>
+              <strong class="text-dark">{{ user.get_full_name|default:user.username }}</strong>
+              <br><small class="text-muted">@{{ user.username }}</small>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      {% else %}
+      <div class="text-center py-5">
+        <h5 class="text-muted">No conversations yet.</h5>
+        <a href="{% url 'marketplace' %}" class="btn btn-primary">Browse Marketplace to Connect</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

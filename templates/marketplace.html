@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}Skill Bazaar - SkillSwap{% endblock %}
+{% block nav_marketplace %}active{% endblock %}
+
+{% block content %}
+<style>
+  .video-wrapper { position: relative; border-radius: 16px 16px 0 0; overflow: hidden; background: #0f0f1a; }
+  .video-overlay {
+    display: none;
+    position: absolute; inset: 0;
+    background: rgba(15,10,30,0.92);
+    flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
+    z-index: 10;
+  }
+  .video-overlay.show { display: flex; }
+  .overlay-icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .overlay-title { color: white; font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+  .overlay-sub { color: #c4b5fd; font-size: 0.82rem; margin-bottom: 16px; line-height: 1.5; }
+  .overlay-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 10px;
+    padding: 10px 22px; font-weight: 700; font-size: 0.88rem;
+    text-decoration: none; cursor: pointer;
+  }
+  .overlay-btn:hover { color: white; opacity: 0.9; }
+  .badge-teaser {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(0,0,0,0.6); color: #fbbf24;
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.75rem; font-weight: 700;
+    backdrop-filter: blur(4px); z-index: 5;
+  }
+  .badge-unlocked {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(16,185,129,0.85); color: white;
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.75rem; font-weight: 700;
+    backdrop-filter: blur(4px); z-index: 5;
+  }
+  .badge-watched {
+    position: absolute; top: 10px; left: 10px;
+    background: rgba(100,100,100,0.7); color: #d1d5db;
+    border-radius: 20px; padding: 3px 10px;
+    font-size: 0.75rem; font-weight: 700;
+    backdrop-filter: blur(4px); z-index: 5;
+  }
+</style>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1 class="mb-1"><i class="bi bi-shop me-2"></i>Skill Bazaar</h1>
+        <p class="mb-0" style="opacity:0.85;">Discover skills, connect with people, and start swapping!</p>
+      </div>
+      <a href="{% url 'post_skill' %}" class="btn fw-600" style="background:rgba(255,255,255,0.2);color:white;border:2px solid rgba(255,255,255,0.4);border-radius:10px;font-weight:600;">
+        <i class="bi bi-plus-circle me-1"></i> Post a Skill
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SEARCH BAR -->
+  <form method="get" class="mb-4">
+    <div class="d-flex gap-2">
+      <div class="position-relative flex-grow-1">
+        <i class="bi bi-search position-absolute" style="left:14px;top:50%;transform:translateY(-50%);color:#9ca3af;"></i>
+        <input class="form-control ps-5" name="q" placeholder="Search for a skill..." value="{{ query }}" style="height:48px;font-size:0.95rem;">
+      </div>
+      <button class="btn btn-primary px-4" type="submit" style="height:48px;min-width:100px;">Search</button>
+      {% if query %}
+      <a href="{% url 'marketplace' %}" class="btn btn-outline-secondary" style="height:48px;">
+        <i class="bi bi-x-lg"></i> Clear
+      </a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if query %}
+  <p class="text-muted mb-3" style="font-size:0.9rem;">
+    Showing results for <strong>"{{ query }}"</strong> — {{ skills|length }} skill{{ skills|length|pluralize }} found
+  </p>
+  {% endif %}
+
+  {% if skills %}
+  <div class="row g-4">
+    {% for skill in skills %}
+    <div class="col-md-4 col-sm-6">
+      <div class="card h-100" style="border:1.5px solid #e0e7ff;">
+
+        {% if skill.teaser_video %}
+          {% if skill.id in unlocked_skill_ids %}
+            <!-- FULL ACCESS -->
+            <div class="video-wrapper">
+              <span class="badge-unlocked"><i class="bi bi-unlock-fill me-1"></i>Full Access</span>
+              <video width="100%" style="max-height:180px;object-fit:cover;display:block;" controls controlsList="nodownload">
+                <source src="{{ skill.teaser_video.url }}" type="video/mp4">
+              </video>
+            </div>
+
+          {% elif skill.id in viewed_skill_ids %}
+            <!-- ALREADY WATCHED TEASER -->
+            <div class="video-wrapper">
+              <span class="badge-watched"><i class="bi bi-eye-slash me-1"></i>Preview Used</span>
+              <video width="100%" style="max-height:180px;object-fit:cover;display:block;opacity:0.4;" disabled>
+                <source src="{{ skill.teaser_video.url }}" type="video/mp4">
+              </video>
+              <div class="video-overlay show">
+                <div class="overlay-icon">🔒</div>
+                <div class="overlay-title">You've used your free preview</div>
+                <div class="overlay-sub">Send a swap request to {{ skill.user.username }} to unlock the full lesson content.</div>
+                <a href="{% url 'request_swap' skill.id %}" class="overlay-btn">
+                  <i class="bi bi-arrow-left-right me-1"></i>Request Swap
+                </a>
+              </div>
+            </div>
+
+          {% else %}
+            <!-- FREE TEASER (first time) -->
+            <div class="video-wrapper" id="wrapper_{{ skill.id }}">
+              <span class="badge-teaser" id="badge_{{ skill.id }}"><i class="bi bi-play-circle me-1"></i>10s Free Preview</span>
+              <video width="100%" style="max-height:180px;object-fit:cover;display:block;"
+                controls controlsList="nodownload noremoteplayback"
+                id="vid_{{ skill.id }}"
+                onplay="startTeaser({{ skill.id }}, '{% url 'record_teaser_view' skill.id %}', '{% url 'request_swap' skill.id %}', '{{ skill.user.username }}')">
+                <source src="{{ skill.teaser_video.url }}" type="video/mp4">
+              </video>
+              <div class="video-overlay" id="overlay_{{ skill.id }}">
+                <div class="overlay-icon">⏱️</div>
+                <div class="overlay-title">Your free preview has ended</div>
+                <div class="overlay-sub">Want to see more from {{ skill.user.username }}?<br>Send a swap request to unlock the full lesson!</div>
+                <a href="{% url 'request_swap' skill.id %}" class="overlay-btn">
+                  <i class="bi bi-arrow-left-right me-1"></i>Request Swap
+                </a>
+              </div>
+            </div>
+          {% endif %}
+
+        {% else %}
+          <div style="border-radius:16px 16px 0 0;background:linear-gradient(135deg,#ede9fe,#dbeafe);height:100px;display:flex;align-items:center;justify-content:center;">
+            <span style="font-size:2.5rem;">🎯</span>
+          </div>
+        {% endif %}
+
+        <div class="card-body d-flex flex-column p-4">
+          <h5 style="font-weight:700;color:#1e1b4b;margin-bottom:6px;">{{ skill.name }}</h5>
+          <p style="font-size:0.83rem;color:#6b7280;margin-bottom:10px;">
+            <i class="bi bi-person-circle me-1" style="color:#4f46e5;"></i>
+            <a href="{% url 'view_profile' skill.user.id %}" style="color:#4f46e5;text-decoration:none;font-weight:600;">
+              {{ skill.user.get_full_name|default:skill.user.username }}
+            </a>
+          </p>
+          {% if skill.description %}
+          <p style="font-size:0.88rem;color:#4b5563;line-height:1.5;margin-bottom:12px;">
+            {{ skill.description|truncatechars:90 }}
+          </p>
+          {% endif %}
+          {% if skill.skill_wanted %}
+          <div class="mb-3">
+            <span style="display:inline-block;background:linear-gradient(135deg,#ede9fe,#dbeafe);color:#4f46e5;border-radius:20px;padding:4px 14px;font-size:0.8rem;font-weight:600;">
+              <i class="bi bi-arrow-left-right me-1"></i>Wants: {{ skill.skill_wanted }}
+            </span>
+          </div>
+          {% endif %}
+          <div class="mt-auto d-flex gap-2">
+            <a href="{% url 'request_swap' skill.id %}" class="btn btn-primary btn-sm flex-grow-1">
+              <i class="bi bi-arrow-left-right me-1"></i>Request Swap
+            </a>
+            <a href="{% url 'chat' skill.user.id %}" class="btn btn-sm" style="border:1.5px solid #4f46e5;color:#4f46e5;border-radius:10px;font-weight:600;">
+              <i class="bi bi-chat"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:4rem;margin-bottom:16px;">{% if query %}🔍{% else %}🛒{% endif %}</div>
+    <h4 style="color:#1e1b4b;font-weight:700;">
+      {% if query %}No skills found for "{{ query }}"{% else %}No skills posted yet{% endif %}
+    </h4>
+    <p class="text-muted mb-4">
+      {% if query %}Try a different search term.{% else %}Be the first to post a skill!{% endif %}
+    </p>
+    <a href="{% url 'post_skill' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-1"></i>Post Your Skill
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+const _teaserLocked = {};
+
+function startTeaser(skillId, recordUrl, swapUrl, username) {
+  if (_teaserLocked[skillId]) {
+    const video = document.getElementById('vid_' + skillId);
+    video.pause();
+    return;
+  }
+
+  const video = document.getElementById('vid_' + skillId);
+  const overlay = document.getElementById('overlay_' + skillId);
+  const badge = document.getElementById('badge_' + skillId);
+
+  fetch(recordUrl, {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'},
+  });
+
+  function lockVideo() {
+    if (_teaserLocked[skillId]) return;
+    _teaserLocked[skillId] = true;
+    video.pause();
+    video.controls = false;
+    overlay.classList.add('show');
+    if (badge) badge.style.display = 'none';
+  }
+
+  video.addEventListener('timeupdate', function() {
+    if (video.currentTime >= 10) {
+      lockVideo();
+    }
+  });
+
+  video.addEventListener('seeking', function() {
+    if (video.currentTime > 10) {
+      video.currentTime = 0;
+    }
+  });
+
+  video.addEventListener('play', function() {
+    if (_teaserLocked[skillId]) {
+      video.pause();
+    }
+  });
+}
+</script>
+
+{% endblock %}

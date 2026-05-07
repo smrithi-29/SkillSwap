@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard - SkillSwap{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div>
+        <h1 class="mb-1">👋 Welcome back, {{ request.user.first_name|default:request.user.username }}!</h1>
+        <p class="mb-0" style="opacity:0.85;">Here's what's happening with your skills today.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{% url 'marketplace' %}" class="btn btn-light fw-600" style="border-radius:10px; font-weight:600;">
+          <i class="bi bi-shop me-1"></i> Skill Bazaar
+        </a>
+        <a href="{% url 'post_skill' %}" class="btn fw-600" style="background:rgba(255,255,255,0.2); color:white; border:2px solid rgba(255,255,255,0.4); border-radius:10px; font-weight:600;">
+          <i class="bi bi-plus-circle me-1"></i> Post Skill
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STAT CARDS -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#ede9fe,#ddd6fe);display:flex;align-items:center;justify-content:center;font-size:1.6rem;">🧠</div>
+          <div>
+            <div style="font-size:2rem;font-weight:800;color:#1e1b4b;line-height:1;">{{ my_skills.count }}</div>
+            <div style="font-size:0.85rem;color:#6b7280;font-weight:500;margin-top:4px;">My Skills Posted</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#fef3c7,#fde68a);display:flex;align-items:center;justify-content:center;font-size:1.6rem;">⏳</div>
+          <div>
+            <div style="font-size:2rem;font-weight:800;color:#1e1b4b;line-height:1;">{{ pending_requests }}</div>
+            <div style="font-size:0.85rem;color:#6b7280;font-weight:500;margin-top:4px;">Pending Requests</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);display:flex;align-items:center;justify-content:center;font-size:1.6rem;">🔔</div>
+          <div>
+            <div style="font-size:2rem;font-weight:800;color:#1e1b4b;line-height:1;">{{ unread_notifications }}</div>
+            <div style="font-size:0.85rem;color:#6b7280;font-weight:500;margin-top:4px;">Unread Notifications</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="row g-4">
+
+    <!-- MY SKILLS -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-lightbulb me-2"></i>My Skills</span>
+          <a href="{% url 'post_skill' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-radius:8px;font-size:0.8rem;border:1px solid rgba(255,255,255,0.3);">
+            + Add New
+          </a>
+        </div>
+        <div class="card-body">
+          {% if my_skills %}
+            {% for skill in my_skills %}
+            <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-2" style="background:#f8faff;border:1.5px solid #e0e7ff;">
+              <div>
+                <div style="font-weight:600;color:#1e1b4b;">{{ skill.name }}</div>
+                {% if skill.skill_wanted %}
+                <div style="font-size:0.82rem;color:#6b7280;margin-top:2px;">
+                  <i class="bi bi-arrow-right-circle me-1" style="color:#4f46e5;"></i>Wants: {{ skill.skill_wanted }}
+                </div>
+                {% endif %}
+              </div>
+              <span class="badge" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);font-size:0.75rem;">Active</span>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4">
+              <div style="font-size:2.5rem;margin-bottom:8px;">🎯</div>
+              <p class="text-muted mb-3">You haven't posted any skills yet.</p>
+              <a href="{% url 'post_skill' %}" class="btn btn-primary btn-sm">Post Your First Skill</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-activity me-2"></i>Recent Swap Activity</span>
+          <a href="{% url 'swap_requests' %}" class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:white;border-radius:8px;font-size:0.8rem;border:1px solid rgba(255,255,255,0.3);">
+            View All
+          </a>
+        </div>
+        <div class="card-body">
+          {% if recent_activity %}
+            {% for swap in recent_activity %}
+            <div class="p-3 rounded-3 mb-2" style="background:#f8faff;border:1.5px solid #e0e7ff;">
+              <div class="d-flex justify-content-between align-items-center">
+                <div style="font-size:0.88rem;color:#374151;">
+                  {% if swap.from_user == request.user %}
+                    <i class="bi bi-arrow-up-right-circle me-1" style="color:#4f46e5;"></i>
+                    You → <strong>{{ swap.to_user.username }}</strong>
+                  {% else %}
+                    <i class="bi bi-arrow-down-left-circle me-1" style="color:#7c3aed;"></i>
+                    <strong>{{ swap.from_user.username }}</strong> → You
+                  {% endif %}
+                </div>
+                <span class="badge {% if swap.status == 'accepted' %}bg-success{% elif swap.status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="border-radius:8px;font-size:0.75rem;">
+                  {{ swap.status|capfirst }}
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center py-4">
+              <div style="font-size:2.5rem;margin-bottom:8px;">🔄</div>
+              <p class="text-muted mb-3">No swap activity yet.</p>
+              <a href="{% url 'marketplace' %}" class="btn btn-outline-primary btn-sm">Browse Skill Bazaar</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QUICK ACTION BUTTONS -->
+  <div class="row g-3 mt-2 mb-4">
+    <div class="col-6 col-md-3">
+      <a href="{% url 'marketplace' %}" class="card text-center p-3 text-decoration-none" style="border:2px solid #e0e7ff;">
+        <div style="font-size:1.8rem;">🛒</div>
+        <div style="font-weight:600;color:#4f46e5;font-size:0.88rem;margin-top:6px;">Skill Bazaar</div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'matches' %}" class="card text-center p-3 text-decoration-none" style="border:2px solid #e0e7ff;">
+        <div style="font-size:1.8rem;">⭐</div>
+        <div style="font-weight:600;color:#4f46e5;font-size:0.88rem;margin-top:6px;">My Matches</div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'chat_list' %}" class="card text-center p-3 text-decoration-none" style="border:2px solid #e0e7ff;">
+        <div style="font-size:1.8rem;">💬</div>
+        <div style="font-weight:600;color:#4f46e5;font-size:0.88rem;margin-top:6px;">Messages</div>
+      </a>
+    </div>
+    <div class="col-6 col-md-3">
+      <a href="{% url 'swap_requests' %}" class="card text-center p-3 text-decoration-none" style="border:2px solid #e0e7ff;">
+        <div style="font-size:1.8rem;">🔄</div>
+        <div style="font-weight:600;color:#4f46e5;font-size:0.88rem;margin-top:6px;">Swap Requests</div>
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

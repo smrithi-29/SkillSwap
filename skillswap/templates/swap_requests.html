@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Swap Requests - SkillSwap{% endblock %}
+{% block nav_swap %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-4">Swap Requests</h3>
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Received Requests</div>
+        <div class="card-body">
+          {% if received %}
+            {% for swap in received %}
+            <div class="card border-0 bg-light mb-3 p-3">
+              <h6>From: <a href="{% url 'view_profile' swap.from_user.id %}">{{ swap.from_user.get_full_name|default:swap.from_user.username }}</a></h6>
+              <p class="mb-1"><span class="badge bg-info text-dark">Offers: {{ swap.skill_offered.name }}</span></p>
+              <p class="mb-2"><span class="badge bg-warning text-dark">Wants: {{ swap.skill_wanted_text }}</span></p>
+              <span class="badge bg-{% if swap.status == 'accepted' %}success{% elif swap.status == 'rejected' %}danger{% else %}secondary{% endif %} mb-2">{{ swap.status|capfirst }}</span>
+              {% if swap.status == 'pending' %}
+              <div class="d-flex gap-2">
+                <a href="{% url 'accept_swap' swap.id %}" class="btn btn-success btn-sm">Accept</a>
+                <a href="{% url 'reject_swap' swap.id %}" class="btn btn-danger btn-sm">Reject</a>
+              </div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted">No requests received yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow border-0 mb-4">
+        <div class="card-header bg-dark text-white">Sent Requests</div>
+        <div class="card-body">
+          {% if sent %}
+            {% for swap in sent %}
+            <div class="card border-0 bg-light mb-3 p-3">
+              <h6>To: <a href="{% url 'view_profile' swap.to_user.id %}">{{ swap.to_user.get_full_name|default:swap.to_user.username }}</a></h6>
+              <p class="mb-1"><span class="badge bg-info text-dark">I offer: {{ swap.skill_offered.name }}</span></p>
+              <p class="mb-2"><span class="badge bg-warning text-dark">I want: {{ swap.skill_wanted_text }}</span></p>
+              <span class="badge bg-{% if swap.status == 'accepted' %}success{% elif swap.status == 'rejected' %}danger{% else %}secondary{% endif %}">{{ swap.status|capfirst }}</span>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p class="text-muted">No requests sent yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Matches - SkillSwap{% endblock %}
+{% block nav_matches %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-4 text-center">Skill Matches</h3>
+
+  {% if matches %}
+  <div class="row justify-content-center">
+    {% for skill in matches %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow border-0 text-center p-4">
+        <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center mx-auto mb-3" style="width:60px;height:60px;font-size:1.5rem;">
+          {{ skill.user.username|first|upper }}
+        </div>
+        <h5>{{ skill.user.get_full_name|default:skill.user.username }}</h5>
+        <span class="badge bg-primary mb-2">{{ skill.name }}</span>
+        <hr>
+        <p class="mb-1"><small>They offer: <strong>{{ skill.name }}</strong></small></p>
+        {% if skill.skill_wanted %}
+        <p class="mb-2"><small>They want: <strong>{{ skill.skill_wanted }}</strong></small></p>
+        {% endif %}
+        <div class="d-flex gap-2 justify-content-center mt-2">
+          <a href="{% url 'request_swap' skill.id %}" class="btn btn-success btn-sm">Start Swap</a>
+          <a href="{% url 'chat' skill.user.id %}" class="btn btn-outline-primary btn-sm">Chat</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <h5 class="text-muted">No matches found yet.</h5>
+    <p class="text-muted">Post more skills or check the marketplace to find matches.</p>
+    <a href="{% url 'post_skill' %}" class="btn btn-success me-2">Post a Skill</a>
+    <a href="{% url 'marketplace' %}" class="btn btn-outline-primary">Browse Marketplace</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Marketplace - SkillSwap{% endblock %}
+{% block nav_marketplace %}active{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3">Skills Marketplace</h3>
+
+  <form method="get" class="mb-4">
+    <div class="input-group">
+      <input class="form-control" name="q" placeholder="Search skills..." value="{{ query }}">
+      <button class="btn btn-primary" type="submit">Search</button>
+      {% if query %}<a href="{% url 'marketplace' %}" class="btn btn-outline-secondary">Clear</a>{% endif %}
+    </div>
+  </form>
+
+  {% if skills %}
+  <div class="row">
+    {% for skill in skills %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow border-0 h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ skill.name }}</h5>
+          <p class="text-muted mb-1"><small>Offered by: <a href="{% url 'view_profile' skill.user.id %}">{{ skill.user.get_full_name|default:skill.user.username }}</a></small></p>
+          {% if skill.description %}
+          <p class="card-text small">{{ skill.description|truncatechars:80 }}</p>
+          {% endif %}
+          {% if skill.skill_wanted %}
+          <p class="mb-2"><span class="badge bg-info text-dark">Wants: {{ skill.skill_wanted }}</span></p>
+          {% endif %}
+          <a href="{% url 'request_swap' skill.id %}" class="btn btn-primary btn-sm">Request Swap</a>
+          <a href="{% url 'chat' skill.user.id %}" class="btn btn-outline-secondary btn-sm ms-1">Chat</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <h5 class="text-muted">
+      {% if query %}No skills found for "{{ query }}"{% else %}No skills available yet. Be the first to post!{% endif %}
+    </h5>
+    <a href="{% url 'post_skill' %}" class="btn btn-success mt-3">Post Your Skill</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

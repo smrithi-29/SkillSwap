@@ -1,0 +1,42 @@
+{% extends 'base_admin.html' %}
+{% block title %}Manage Users - SkillSwap{% endblock %}
+{% block page_title %}Manage Users{% endblock %}
+{% block side_users %}fw-bold text-warning{% endblock %}
+
+{% block content %}
+<h4 class="mb-3">All Users</h4>
+<table class="table table-bordered table-hover">
+  <thead class="table-dark">
+    <tr>
+      <th>#</th>
+      <th>Username</th>
+      <th>Full Name</th>
+      <th>Email</th>
+      <th>Joined</th>
+      <th>Staff</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ user.username }}</td>
+      <td>{{ user.get_full_name|default:"-" }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ user.date_joined|date:"M d, Y" }}</td>
+      <td>{% if user.is_staff %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</td>
+      <td>
+        {% if not user.is_superuser %}
+        <a href="{% url 'admin_delete_user' user.id %}" class="btn btn-danger btn-sm" onclick="return confirm('Delete this user?')">Delete</a>
+        {% else %}
+        <span class="text-muted small">Superuser</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="text-center text-muted">No users found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

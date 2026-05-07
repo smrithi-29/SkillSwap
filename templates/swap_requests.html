@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .requests-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 32px;
+    color: white;
+    text-align: center;
+  }
+  .requests-header h1 { font-size: 2rem; font-weight: 800; margin: 0 0 8px; }
+  .requests-header p { opacity: 0.85; margin: 0; font-size: 1.05rem; }
+
+  .section-title {
+    font-size: 1.2rem; font-weight: 700;
+    color: #4c1d95; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .count-badge {
+    background: #7c3aed; color: white;
+    border-radius: 20px; padding: 2px 12px;
+    font-size: 0.85rem; font-weight: 600;
+  }
+
+  .request-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.08);
+    border: 1px solid #ede9fe;
+    transition: all 0.2s;
+  }
+  .request-card:hover {
+    box-shadow: 0 8px 24px rgba(124,58,237,0.15);
+    transform: translateY(-2px);
+  }
+
+  .request-card .card-top {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 16px;
+  }
+  .user-info { display: flex; align-items: center; gap: 12px; }
+  .user-avatar {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .user-name { font-weight: 700; color: #1e1b4b; font-size: 1rem; }
+  .user-sub { color: #6b7280; font-size: 0.85rem; }
+
+  .status-badge {
+    padding: 5px 14px; border-radius: 20px;
+    font-size: 0.8rem; font-weight: 600;
+  }
+  .status-pending { background: #fef3c7; color: #92400e; }
+  .status-accepted { background: #d1fae5; color: #065f46; }
+  .status-rejected { background: #fee2e2; color: #991b1b; }
+
+  .swap-details {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap;
+    background: #f5f3ff; border-radius: 12px;
+    padding: 14px 18px; margin-bottom: 16px;
+  }
+  .skill-tag {
+    background: white; border: 1.5px solid #c4b5fd;
+    border-radius: 10px; padding: 6px 14px;
+    font-size: 0.88rem; font-weight: 600; color: #5b21b6;
+  }
+  .swap-arrow {
+    color: #7c3aed; font-size: 1.2rem; font-weight: 700;
+  }
+  .swap-label { font-size: 0.78rem; color: #6b7280; text-align: center; }
+
+  .card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn-accept {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: white; border: none; border-radius: 10px;
+    padding: 9px 22px; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-accept:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.4); color: white; }
+  .btn-reject {
+    background: white; color: #dc2626;
+    border: 1.5px solid #fca5a5; border-radius: 10px;
+    padding: 9px 22px; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-reject:hover { background: #fee2e2; transform: translateY(-1px); color: #dc2626; }
+  .btn-chat {
+    background: white; color: #7c3aed;
+    border: 1.5px solid #c4b5fd; border-radius: 10px;
+    padding: 9px 22px; font-weight: 600; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-chat:hover { background: #f5f3ff; transform: translateY(-1px); color: #7c3aed; }
+
+  .empty-state {
+    text-align: center; padding: 48px 24px;
+    background: white; border-radius: 16px;
+    border: 2px dashed #ddd6fe; color: #8b5cf6;
+  }
+  .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: 0.5; }
+  .empty-state p { color: #6b7280; margin: 0; }
+
+  .section-block { margin-bottom: 40px; }
+</style>
+
+<div class="requests-header">
+  <h1><i class="bi bi-arrow-left-right me-2"></i>Swap Requests</h1>
+  <p>Manage your incoming and outgoing skill swap requests</p>
+</div>
+
+<!-- INCOMING REQUESTS -->
+<div class="section-block">
+  <div class="section-title">
+    <i class="bi bi-inbox-fill" style="color:#7c3aed;"></i>
+    Incoming Requests
+    <span class="count-badge">{{ received|length }}</span>
+  </div>
+
+  {% if received %}
+    {% for req in received %}
+    <div class="request-card">
+      <div class="card-top">
+        <div class="user-info">
+          <div class="user-avatar">{{ req.from_user.username|first|upper }}</div>
+          <div>
+            <div class="user-name">{{ req.from_user.username }}</div>
+            <div class="user-sub">wants to swap with you</div>
+          </div>
+        </div>
+        <span class="status-badge status-{{ req.status }}">{{ req.status|capfirst }}</span>
+      </div>
+
+      <div class="swap-details">
+        <div style="text-align:center;">
+          <div class="swap-label">They offer</div>
+          <div class="skill-tag"><i class="bi bi-mortarboard-fill me-1"></i>{{ req.skill_offered.name }}</div>
+        </div>
+        <div class="swap-arrow">⇄</div>
+        <div style="text-align:center;">
+          <div class="swap-label">They want</div>
+          <div class="skill-tag"><i class="bi bi-stars me-1"></i>{{ req.skill_wanted_text }}</div>
+        </div>
+      </div>
+
+      {% if req.status == 'pending' %}
+      <div class="card-actions">
+        <a href="{% url 'accept_swap' req.id %}" class="btn-accept">
+          <i class="bi bi-check-circle-fill"></i> Accept
+        </a>
+        <a href="{% url 'reject_swap' req.id %}" class="btn-reject">
+          <i class="bi bi-x-circle-fill"></i> Decline
+        </a>
+      </div>
+      {% elif req.status == 'accepted' %}
+      <div class="card-actions">
+        <a href="{% url 'chat' req.from_user.id %}" class="btn-chat">
+          <i class="bi bi-chat-dots-fill"></i> Open Chat
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-inbox"></i>
+    <strong>No incoming requests</strong>
+    <p>When someone wants to swap skills with you, it'll appear here.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- OUTGOING REQUESTS -->
+<div class="section-block">
+  <div class="section-title">
+    <i class="bi bi-send-fill" style="color:#7c3aed;"></i>
+    Sent Requests
+    <span class="count-badge">{{ sent|length }}</span>
+  </div>
+
+  {% if sent %}
+    {% for req in sent %}
+    <div class="request-card">
+      <div class="card-top">
+        <div class="user-info">
+          <div class="user-avatar">{{ req.to_user.username|first|upper }}</div>
+          <div>
+            <div class="user-name">{{ req.to_user.username }}</div>
+            <div class="user-sub">your swap request</div>
+          </div>
+        </div>
+        <span class="status-badge status-{{ req.status }}">{{ req.status|capfirst }}</span>
+      </div>
+
+      <div class="swap-details">
+        <div style="text-align:center;">
+          <div class="swap-label">You offer</div>
+          <div class="skill-tag"><i class="bi bi-mortarboard-fill me-1"></i>{{ req.skill_offered.name }}</div>
+        </div>
+        <div class="swap-arrow">⇄</div>
+        <div style="text-align:center;">
+          <div class="swap-label">You want</div>
+          <div class="skill-tag"><i class="bi bi-stars me-1"></i>{{ req.skill_wanted_text }}</div>
+        </div>
+      </div>
+
+      {% if req.status == 'accepted' %}
+      <div class="card-actions">
+        <a href="{% url 'chat' req.to_user.id %}" class="btn-chat">
+          <i class="bi bi-chat-dots-fill"></i> Open Chat
+        </a>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-send"></i>
+    <strong>No sent requests</strong>
+    <p>Go to the <a href="{% url 'marketplace' %}" style="color:#7c3aed;">marketplace</a> and request a skill swap!</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

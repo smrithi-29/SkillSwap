@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .post-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px; padding: 40px;
+    margin-bottom: 32px; color: white; text-align: center;
+  }
+  .post-header h1 { font-size: 2rem; font-weight: 800; margin: 0 0 8px; }
+  .post-header p { opacity: 0.85; margin: 0; }
+
+  .form-card {
+    background: white; border-radius: 20px;
+    padding: 36px; max-width: 640px; margin: 0 auto;
+    box-shadow: 0 4px 24px rgba(124,58,237,0.1);
+    border: 1px solid #ede9fe;
+  }
+  .form-label { font-weight: 600; color: #4c1d95; margin-bottom: 6px; }
+  .form-control {
+    border: 1.5px solid #ddd6fe; border-radius: 10px;
+    padding: 10px 14px; font-size: 0.95rem;
+    transition: border-color 0.2s;
+  }
+  .form-control:focus {
+    border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+    outline: none;
+  }
+  .video-upload-box {
+    border: 2px dashed #c4b5fd; border-radius: 12px;
+    padding: 24px; text-align: center;
+    background: #faf5ff; transition: all 0.2s; cursor: pointer;
+  }
+  .video-upload-box:hover { border-color: #7c3aed; background: #f5f3ff; }
+  .video-upload-box i { font-size: 2rem; color: #7c3aed; display: block; margin-bottom: 8px; }
+  .video-upload-box p { color: #6b7280; margin: 0; font-size: 0.9rem; }
+  .video-limit-note {
+    background: #fef3c7; border: 1px solid #fcd34d;
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 0.85rem; color: #92400e;
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 8px;
+  }
+  #videoPreview { display: none; width: 100%; border-radius: 12px; margin-top: 12px; }
+  #durationWarning {
+    display: none; color: #dc2626;
+    background: #fee2e2; border-radius: 8px;
+    padding: 10px 14px; font-size: 0.88rem;
+    margin-top: 8px;
+  }
+  .btn-submit {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white; border: none; border-radius: 12px;
+    padding: 13px 32px; font-weight: 700; font-size: 1rem;
+    width: 100%; cursor: pointer; transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .mb-4 { margin-bottom: 20px; }
+</style>
+
+<div class="post-header">
+  <h1><i class="bi bi-plus-circle-fill me-2"></i>Share Your Skill</h1>
+  <p>Teach what you know. Learn what you don't.</p>
+</div>
+
+<div class="form-card">
+  <form method="post" enctype="multipart/form-data" id="skillForm">
+    {% csrf_token %}
+
+    <div class="mb-4">
+      <label class="form-label"><i class="bi bi-bookmark-fill me-1"></i>Skill Name</label>
+      {{ form.name }}
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label"><i class="bi bi-card-text me-1"></i>Description</label>
+      {{ form.description }}
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label"><i class="bi bi-tag-fill me-1"></i>Skill You Want in Return</label>
+      {{ form.skill_wanted }}
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label"><i class="bi bi-camera-video-fill me-1"></i>Teaser Video <span style="color:#6b7280;font-weight:400;">(optional)</span></label>
+      <div class="video-upload-box" onclick="document.getElementById('videoInput').click()">
+        <i class="bi bi-cloud-arrow-up-fill"></i>
+        <p><strong>Click to upload a short video</strong></p>
+        <p>Show off your skill — max 10 seconds</p>
+      </div>
+      <div style="display:none;">{{ form.teaser_video }}</div>
+      <div class="video-limit-note">
+        <i class="bi bi-info-circle-fill"></i>
+        Only the first 10 seconds will be shown to others on the marketplace.
+      </div>
+      <div id="durationWarning">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i>
+        Video is longer than 10 seconds. It will be trimmed to 10s for preview.
+      </div>
+      <video id="videoPreview" controls></video>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <i class="bi bi-check-circle-fill me-2"></i>Post My Skill
+    </button>
+  </form>
+</div>
+
+<script>
+  const videoInput = document.getElementById('videoInput');
+  const preview = document.getElementById('videoPreview');
+  const warning = document.getElementById('durationWarning');
+
+  videoInput.addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    preview.src = url;
+    preview.style.display = 'block';
+
+    preview.onloadedmetadata = function() {
+      if (preview.duration > 10) {
+        warning.style.display = 'block';
+        preview.addEventListener('timeupdate', function() {
+          if (preview.currentTime >= 10) {
+            preview.pause();
+          }
+        });
+      } else {
+        warning.style.display = 'none';
+      }
+    };
+  });
+</script>
+{% endblock %}

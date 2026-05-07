@@ -1,0 +1,22 @@
+kind = "web"
+previewPath = "/"
+title = "SkillSwap"
+version = "1.0.0"
+id = "artifacts/skillswap"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21899
+
+[services.development]
+run = "bash -c 'cd /home/runner/workspace/artifacts/skillswap && python manage.py migrate --run-syncdb 2>&1 && python manage.py runserver 0.0.0.0:21899'"
+
+[services.env]
+PORT = "21899"
+BASE_PATH = "/"

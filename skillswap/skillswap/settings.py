@@ -93,4 +93,5 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.app',
     'http://localhost:*',
     'https://*.railway.app',
+    'https://*.onrender.com',
 ]

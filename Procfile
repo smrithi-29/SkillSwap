@@ -1,0 +1,1 @@
+web: gunicorn skillswap.wsgi --log-file -

@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,17 +50,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'skillswap.wsgi.application'
 
-import dj_database_url
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres.jjtyoivtaycrpiwujykn',
-        'PASSWORD': 'Shsmlavi_2015',
-        'HOST': 'aws-1-ap-southeast-2.pooler.supabase.com',
-        'PORT': '5432',
-    }
+    'default': dj_database_url.parse(
+        os.environ.get('DATABASE_URL', 'postgresql://postgres:Skillswap2026@db.jjtyoivtaycrpiwujykn.supabase.co:5432/postgres')
+    )
 }
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},

@@ -31,4 +31,15 @@ urlpatterns = [
     path('admin-panel/requests/reject/<int:request_id>/', views.admin_reject_request, name='admin_reject_request'),
     path('admin-panel/reports/', views.admin_reports, name='admin_reports'),
     path('teaser-viewed/<int:skill_id>/', views.record_teaser_view, name='record_teaser_view'),
+        # API endpoints for mobile app
+    path('api/auth/login/', views.api_login, name='api_login'),
+    path('api/auth/signup/', views.api_signup, name='api_signup'),
+    path('api/home/', views.api_home, name='api_home'),
+    path('api/skills/', views.api_skills, name='api_skills'),
+    path('api/swaps/', views.api_swaps, name='api_swaps'),
+    path('api/matches/', views.api_matches, name='api_matches'),
+    path('api/notifications/', views.api_notifications, name='api_notifications'),
+    path('api/chats/', views.api_chat_list, name='api_chat_list'),
+    path('api/chats/<int:user_id>/', views.api_chat_detail, name='api_chat_detail'),
+    path('api/profile/', views.api_profile, name='api_profile'),
 ]

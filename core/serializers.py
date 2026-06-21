@@ -35,16 +35,15 @@ class SkillSerializer(serializers.ModelSerializer):
         return None
 
 class SwapRequestSerializer(serializers.ModelSerializer):
-    from_user = UserSerializer(read_only=True)
-    to_user = UserSerializer(read_only=True)
-    to_user_id = serializers.IntegerField(write_only=True)
-    skill_offered_id = serializers.IntegerField(write_only=True)
+    from_user_username = serializers.CharField(source='from_user.username', read_only=True)
+    to_user_username = serializers.CharField(source='to_user.username', read_only=True)
+    skill_offered_name = serializers.CharField(source='skill_offered.name', read_only=True)
 
     class Meta:
         model = SwapRequest
-        fields = ['id', 'from_user', 'to_user', 'to_user_id', 'skill_offered', 'skill_offered_id', 'skill_wanted_text', 'status', 'created_at']
-        read_only_fields = ['status', 'skill_offered', 'from_user', 'to_user']
-
+        fields = ['id', 'from_user', 'to_user', 'from_user_username', 'to_user_username',
+                  'skill_offered', 'skill_offered_name', 'skill_wanted_text', 'status', 'created_at']
+                  
 class ChatMessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer(read_only=True)
     image_url = serializers.SerializerMethodField()

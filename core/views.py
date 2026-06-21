@@ -8,6 +8,13 @@ from django.http import JsonResponse
 import random
 from .models import UserProfile, Skill, SwapRequest, ChatMessage, Review, Notification, TeaserView
 from .forms import LoginForm, SignupForm, ProfileForm, SkillForm, ReviewForm, ChatForm
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from .serializers import SignupSerializer, SkillSerializer, SwapRequestSerializer, ChatMessageSerializer, UserSerializer
+
 
 def landing_view(request):
     if request.user.is_authenticated:
@@ -485,4 +492,138 @@ def admin_reports(request):
         'recent_swaps': recent_swaps,
     })
 
+# ─── API VIEWS ───────────────────────────────────────────────
 
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_login(request):
+    username = request.data.get('username')
+    password = request.data.get('password')
+    user = authenticate(request, username=username, password=password)
+    if user:
+        token, _ = Token.objects.get_or_create(user=user)
+        create_profile_if_missing(user)
+        return Response({'token': token.key, 'user_id': user.id, 'username': user.username, 'email': user.email})
+    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_signup(request):
+    serializer = SignupSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        UserProfile.objects.get_or_create(user=user)
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key, 'user_id': user.id, 'username': user.username}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def api_home(request):
+    my_skills_count = Skill.objects.filter(user=request.user, is_active=True).count()
+    swaps_count = SwapRequest.objects.filter(Q(from_user=request.user) | Q(to_user=request.user)).count()
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    return Response({'my_skills': my_skills_count, 'swaps': swaps_count, 'unread': unread_count, 'username': request.user.username})
+
+
+@api_view(['GET', 'POST'])
+def api_skills(request):
+    if request.method == 'GET':
+        query = request.query_params.get('q', '')
+        skills = Skill.objects.filter(is_active=True)
+        if query:
+            skills = skills.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        serializer = SkillSerializer(skills, many=True, context={'request': request})
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = SkillSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+def api_swaps(request):
+    if request.method == 'GET':
+        swaps = SwapRequest.objects.filter(Q(from_user=request.user) | Q(to_user=request.user)).order_by('-created_at')
+        serializer = SwapRequestSerializer(swaps, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        skill_id = request.data.get('skill_id')
+        skill = get_object_or_404(Skill, id=skill_id)
+        if skill.user == request.user:
+            return Response({'error': "Can't swap your own skill"}, status=status.HTTP_400_BAD_REQUEST)
+        my_skills = Skill.objects.filter(user=request.user, is_active=True)
+        if not my_skills.exists():
+            return Response({'error': 'Post a skill first'}, status=status.HTTP_400_BAD_REQUEST)
+        swap = SwapRequest.objects.create(
+            from_user=request.user, to_user=skill.user,
+            skill_offered=my_skills.first(), skill_wanted_text=skill.name, status='pending'
+        )
+        return Response(SwapRequestSerializer(swap).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def api_matches(request):
+    my_skills = Skill.objects.filter(user=request.user, is_active=True)
+    my_wanted = [s.skill_wanted.lower() for s in my_skills if s.skill_wanted]
+    my_offered = [s.name.lower() for s in my_skills]
+    matches = []
+    if my_wanted or my_offered:
+        other_skills = Skill.objects.filter(is_active=True).exclude(user=request.user)
+        for skill in other_skills:
+            if any(w in skill.name.lower() for w in my_wanted) or any(o in (skill.skill_wanted or '').lower() for o in my_offered):
+                matches.append(skill)
+    serializer = SkillSerializer(matches, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def api_notifications(request):
+    notifs = Notification.objects.filter(user=request.user).order_by('-created_at')
+    data = [{'id': n.id, 'message': n.message, 'type': n.notification_type, 'is_read': n.is_read, 'created_at': n.created_at} for n in notifs]
+    notifs.filter(is_read=False).update(is_read=True)
+    return Response(data)
+
+
+@api_view(['GET'])
+def api_chat_list(request):
+    sent = ChatMessage.objects.filter(sender=request.user).values_list('receiver', flat=True)
+    received = ChatMessage.objects.filter(receiver=request.user).values_list('sender', flat=True)
+    user_ids = set(list(sent) + list(received))
+    chat_users = User.objects.filter(id__in=user_ids)
+    serializer = UserSerializer(chat_users, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+def api_chat_detail(request, user_id):
+    other_user = get_object_or_404(User, id=user_id)
+    if request.method == 'GET':
+        msgs = ChatMessage.objects.filter(
+            (Q(sender=request.user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=request.user))
+        ).order_by('timestamp')
+        serializer = ChatMessageSerializer(msgs, many=True, context={'request': request})
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        message_text = request.data.get('message', '')
+        if not message_text:
+            return Response({'error': 'Message cannot be empty'}, status=status.HTTP_400_BAD_REQUEST)
+        msg = ChatMessage.objects.create(sender=request.user, receiver=other_user, message=message_text)
+        Notification.objects.create(user=other_user, message=f"New message from {request.user.username}", notification_type='new_message')
+        return Response(ChatMessageSerializer(msg, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def api_profile(request):
+    create_profile_if_missing(request.user)
+    my_skills = Skill.objects.filter(user=request.user, is_active=True)
+    reviews = Review.objects.filter(reviewed_user=request.user)
+    return Response({
+        'user': UserSerializer(request.user).data,
+        'skills': SkillSerializer(my_skills, many=True, context={'request': request}).data,
+        'reviews': [{'id': r.id, 'reviewer': r.reviewer.username, 'rating': r.rating, 'comment': r.comment} for r in reviews],
+    })

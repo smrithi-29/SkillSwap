@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -6,7 +7,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.db.models import Q
-from .models import Skill, SwapRequest, ChatMessage
+from .models import Skill, SwapRequest, ChatMessage, Review, Notification, UserProfile, TeaserView
 from .serializers import (
     SignupSerializer, SkillSerializer,
     SwapRequestSerializer, ChatMessageSerializer
@@ -131,3 +132,203 @@ def api_chat_send(request, user_id):
     )
     serializer = ChatMessageSerializer(msg, context={'request': request})
     return Response(serializer.data, status=201)
+
+
+# PATCH /api/swaps/<id>/accept/
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def api_swap_accept(request, swap_id):
+    try:
+        swap = SwapRequest.objects.get(id=swap_id, to_user=request.user)
+    except SwapRequest.DoesNotExist:
+        return Response({'error': 'Swap not found.'}, status=404)
+    swap.status = 'accepted'
+    swap.save()
+    return Response({'message': 'Swap accepted.'})
+
+# PATCH /api/swaps/<id>/reject/
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def api_swap_reject(request, swap_id):
+    try:
+        swap = SwapRequest.objects.get(id=swap_id, to_user=request.user)
+    except SwapRequest.DoesNotExist:
+        return Response({'error': 'Swap not found.'}, status=404)
+    swap.status = 'rejected'
+    swap.save()
+    return Response({'message': 'Swap rejected.'})
+
+
+
+# GET /api/profile/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_profile(request):
+    user = request.user
+    try:
+        profile = user.profile
+        bio = profile.bio
+        phone = profile.phone
+    except:
+        bio = ''
+        phone = ''
+    skills = Skill.objects.filter(user=user, is_active=True)
+    reviews = Review.objects.filter(reviewed_user=user)
+    avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0
+    return Response({
+        'user_id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'bio': bio,
+        'phone': phone,
+        'skill_count': skills.count(),
+        'review_count': reviews.count(),
+        'avg_rating': round(avg_rating, 1),
+    })
+
+# GET /api/notifications/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_notifications(request):
+    notifs = Notification.objects.filter(user=request.user).order_by('-created_at')[:20]
+    data = [{'id': n.id, 'message': n.message, 'type': n.notification_type,
+             'is_read': n.is_read, 'created_at': str(n.created_at)} for n in notifs]
+    return Response(data)
+
+# POST /api/notifications/<id>/read/
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_notification_read(request, notif_id):
+    try:
+        notif = Notification.objects.get(id=notif_id, user=request.user)
+        notif.is_read = True
+        notif.save()
+        return Response({'message': 'Marked as read.'})
+    except Notification.DoesNotExist:
+        return Response({'error': 'Not found.'}, status=404)
+
+# GET /api/reviews/<user_id>/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_reviews(request, user_id):
+    reviews = Review.objects.filter(reviewed_user__id=user_id).order_by('-created_at')
+    data = [{'id': r.id, 'reviewer': r.reviewer.username, 'rating': r.rating,
+             'comment': r.comment, 'created_at': str(r.created_at)} for r in reviews]
+    return Response(data)
+
+
+# GET /api/skills/<skill_id>/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_skill_detail(request, skill_id):
+    skill = get_object_or_404(Skill, id=skill_id)
+    has_viewed = TeaserView.objects.filter(user=request.user, skill=skill).exists()
+    is_unlocked = SwapRequest.objects.filter(
+        Q(from_user=request.user, to_user=skill.user) |
+        Q(from_user=skill.user, to_user=request.user),
+        status='accepted'
+    ).exists()
+    teaser_url = request.build_absolute_uri(skill.teaser_video.url) if skill.teaser_video else None
+    return Response({
+        'id': skill.id,
+        'name': skill.name,
+        'description': skill.description,
+        'skill_wanted': skill.skill_wanted,
+        'user_id': skill.user.id,
+        'user_username': skill.user.username,
+        'teaser_video': teaser_url,
+        'has_viewed_teaser': has_viewed,
+        'is_unlocked': is_unlocked,
+    })
+
+
+# POST /api/teaser-view/<skill_id>/
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_record_teaser_view(request, skill_id):
+    skill = get_object_or_404(Skill, id=skill_id)
+    TeaserView.objects.get_or_create(user=request.user, skill=skill)
+    return Response({'status': 'recorded'})
+
+
+# GET /api/matches/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_matches(request):
+    my_skills = Skill.objects.filter(user=request.user, is_active=True)
+    my_offered = [s.name.lower() for s in my_skills]
+    my_wanted = [s.skill_wanted.lower() for s in my_skills if s.skill_wanted]
+    other_skills = Skill.objects.filter(is_active=True).exclude(user=request.user)
+    matches = []
+    for skill in other_skills:
+        match_score = 0
+        if skill.name.lower() in my_wanted:
+            match_score += 2
+        if skill.skill_wanted and skill.skill_wanted.lower() in my_offered:
+            match_score += 2
+        for offered in my_offered:
+            if offered in skill.name.lower():
+                match_score += 1
+        if match_score > 0:
+            matches.append({
+                'id': skill.id,
+                'name': skill.name,
+                'description': skill.description,
+                'skill_wanted': skill.skill_wanted,
+                'user_id': skill.user.id,
+                'user_username': skill.user.username,
+                'match_score': match_score,
+            })
+    matches.sort(key=lambda x: x['match_score'], reverse=True)
+    return Response(matches[:20])
+
+
+# POST /api/reviews/submit/<user_id>/
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_submit_review(request, user_id):
+    try:
+        reviewed_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+    if reviewed_user == request.user:
+        return Response({'error': 'Cannot review yourself.'}, status=400)
+    rating = request.data.get('rating')
+    comment = request.data.get('comment', '')
+    if not rating or int(rating) not in range(1, 6):
+        return Response({'error': 'Rating must be 1-5.'}, status=400)
+    review, created = Review.objects.get_or_create(
+        reviewer=request.user,
+        reviewed_user=reviewed_user,
+        defaults={'rating': int(rating), 'comment': comment}
+    )
+    if not created:
+        review.rating = int(rating)
+        review.comment = comment
+        review.save()
+    return Response({'message': 'Review submitted!'}, status=201)
+
+    
+# GET /api/user/<user_id>/
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_user_profile(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=404)
+    try:
+        bio = user.profile.bio
+    except:
+        bio = ''
+    skills = Skill.objects.filter(user=user, is_active=True)
+    reviews = Review.objects.filter(reviewed_user=user)
+    avg_rating = sum(r.rating for r in reviews) / len(reviews) if reviews else 0
+    return Response({
+        'user_id': user.id,
+        'username': user.username,
+        'bio': bio,
+        'skill_count': skills.count(),
+        'review_count': reviews.count(),
+        'avg_rating': round(avg_rating, 1),
+    })

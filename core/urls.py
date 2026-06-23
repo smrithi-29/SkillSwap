@@ -42,4 +42,5 @@ urlpatterns = [
     path('api/chats/', views.api_chat_list, name='api_chat_list'),
     path('api/chats/<int:user_id>/', views.api_chat_detail, name='api_chat_detail'),
     path('api/profile/', views.api_profile, name='api_profile'),
+    path('api/skills/<int:skill_id>/', views.skill_detail_view, name='skill-detail'),
 ]

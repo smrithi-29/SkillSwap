@@ -627,3 +627,21 @@ def api_profile(request):
         'skills': SkillSerializer(my_skills, many=True, context={'request': request}).data,
         'reviews': [{'id': r.id, 'reviewer': r.reviewer.username, 'rating': r.rating, 'comment': r.comment} for r in reviews],
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def skill_detail_view(request, skill_id):
+    try:
+        skill = Skill.objects.get(id=skill_id)
+    except Skill.DoesNotExist:
+        return Response({'error': 'Skill not found'}, status=404)
+    data = {
+        'id': skill.id,
+        'name': skill.name,
+        'description': skill.description,
+        'skill_wanted': skill.skill_wanted,
+        'user_id': skill.user.id,
+        'user_username': skill.user.username,
+        'teaser_video': skill.teaser_video.url if skill.teaser_video else None,
+    }
+    return Response(data)
